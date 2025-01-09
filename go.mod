@@ -1,4 +1,4 @@
-module main.go
+module github.com/amadou-toure/groove_api
 
 go 1.23.1
 
