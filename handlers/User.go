@@ -45,7 +45,30 @@ func GetUsers(c *fiber.Ctx)error{
 	 return c.Status(HTTP_CODE.Ok).JSON(users)
 
 }
+func GetOneUser(c *fiber.Ctx) error{
+	id:= c.Params("id")
+	UserID,err:= primitive.ObjectIDFromHex(id)
+	if err != nil{
+		return c.Status(HTTP_CODE.Bad_request).SendString("unvalid User id")
+	}
+	filter:= bson.D{{Key: "_id",Value: UserID,}}
+	user:=new(models.User)
+	query:= Database.Mg.Db.Collection("Users").FindOne(c.Context(),filter)
+	if query.Err() != nil{
+		if query.Err() == mongo.ErrNoDocuments{
+		return c.Status(HTTP_CODE.Not_found).SendString("User not found")
+		}
+		return c.Status(HTTP_CODE.Server_error).SendString(query.Err().Error())
+	}
+	err=query.Decode(user)
+	if err != nil{
+		if err == mongo.ErrNoDocuments{
+			return c.Status(HTTP_CODE.Not_found).SendString("User not found 2")
+		}
+	}
+	return c.Status(HTTP_CODE.Ok).JSON(user)
 
+}
 
 func UpdateUser(c *fiber.Ctx)error{
 id:=c.Params("id")

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/amadou-toure/groove_api/Database"
 	"github.com/amadou-toure/groove_api/HTTP_CODE"
@@ -18,20 +19,20 @@ func main() {
 	}
 
 	app := fiber.New()
-	 app.Post("/user",handlers.CreateUser)
+	app.Post("/user",handlers.CreateUser)
 	app.Get("/users",handlers.GetUsers)
-	// app.Get("/user/:id",handlers.GetUser)
+	app.Get("/user/:id",handlers.GetOneUser)
 	app.Put("/user/:id",handlers.UpdateUser)
 	app.Delete("/user/:id",handlers.DeleteUser)
 
 
 	 app.Get("/",func (c *fiber.Ctx)error{
-	 	err := c.SendString("server is running")
+	 	err := c.SendString(":" + os.Getenv("PORT"))
 		if err != nil{
 			return c.Status(HTTP_CODE.Server_error).SendString("Server failed to respond")
 		}
 		return err
 	 })
-	app.Listen("localhost:3000")
+	app.Listen(":3000")
 
 }
