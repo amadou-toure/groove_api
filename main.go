@@ -20,6 +20,7 @@ func main() {
 
 	app := fiber.New()
 	app.Post("/user",handlers.CreateUser)
+	app.Post("/user/login",handlers.Login)
 	app.Get("/users",handlers.GetUsers)
 	app.Get("/user/:id",handlers.GetOneUser)
 	app.Put("/user/:id",handlers.UpdateUser)

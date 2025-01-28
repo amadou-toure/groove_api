@@ -4,6 +4,7 @@ import (
 	"github.com/amadou-toure/groove_api/Database"
 	"github.com/amadou-toure/groove_api/HTTP_CODE"
 	"github.com/amadou-toure/groove_api/models"
+	"github.com/amadou-toure/groove_api/utils"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,6 +19,11 @@ func CreateUser(c *fiber.Ctx)error{
 	if err != nil {
 		return c.Status(HTTP_CODE.Server_error).SendString(err.Error())
 	}
+	hashPassword,err := utils.HashPassword(newUser.Password)
+	if err != nil{
+		return c.Status(HTTP_CODE.Server_error).SendString("error crypting the password")
+	}
+	newUser.Password=hashPassword
 	newUser.ID = ""
 	result,err:=Database.Mg.Db.Collection("Users").InsertOne(c.Context(),newUser)
 	if err != nil {
@@ -26,6 +32,31 @@ func CreateUser(c *fiber.Ctx)error{
 	
 	return c.Status(HTTP_CODE.Created).SendString("user " + newUser.Name + " created with id " + result.InsertedID.(primitive.ObjectID).Hex())
  
+}
+
+func Login(c *fiber.Ctx) error {
+	body := new(models.User)
+	user := new(models.User)
+	err:=c.BodyParser(body)
+	if err != nil {
+		return c.Status(HTTP_CODE.Bad_request).SendString(err.Error())
+	}
+	filter:=bson.D{{Key:"email",Value: body.Email}}
+	err= Database.Mg.Db.Collection("Users").FindOne(c.Context(),filter).Decode(&user)
+	
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(HTTP_CODE.Not_found).JSON("no user found with this email")
+		}
+		return c.Status(HTTP_CODE.Server_error).SendString(err.Error())
+	}
+ 	passwordIsCorrect:=utils.CompareHashedPassword(body.Password,user.Password)
+	if !passwordIsCorrect {
+    return c.Status(HTTP_CODE.Bad_request).SendString("Wrong password!, try again")
+}
+
+	return c.Status(HTTP_CODE.Accepted).JSON(user)
+
 }
 
 func GetUsers(c *fiber.Ctx)error{
